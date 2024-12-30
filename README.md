@@ -10,3 +10,10 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 ## Contributing
 nah, just create pull requests if you want, if it's works - it's good, if not, i gonna beat you up
+
+## TODO
+- [X] Basic Search
+- [X] Tag Autocomplete
+- [ ] Accounts
+- [ ] Pages (api limitations, idk why)
+- [ ] Comments
