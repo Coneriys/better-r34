@@ -29,6 +29,7 @@ const SearchInput = () => {
     const [selectedMedia, setSelectedMedia] = useState<{ url: string, type: 'image' | 'video' } | null>(null);
     const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
     const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
     const postsPerPage = 50;
 
     const inputRef = useRef<HTMLInputElement>(null);
@@ -38,14 +39,17 @@ const SearchInput = () => {
         const parser = new DOMParser();
         const xmlDoc = parser.parseFromString(xmlString, "application/xml");
         const posts = Array.from(xmlDoc.getElementsByTagName("post"));
-
-        return posts.map((post) => ({
-            id: post.getAttribute("id"),
-            fileUrl: post.getAttribute("file_url"),
-            previewUrl: post.getAttribute("preview_url"),
-            tags: post.getAttribute("tags"),
-            type: post.getAttribute("file_url")?.endsWith(".mp4") ? 'video' : 'image',
-        }));
+        const count = Number(xmlDoc.querySelector("posts")?.getAttribute("count")) || 0; // Получаем count
+        return {
+            posts: posts.map((post) => ({
+                id: post.getAttribute("id"),
+                fileUrl: post.getAttribute("file_url"),
+                previewUrl: post.getAttribute("preview_url"),
+                tags: post.getAttribute("tags"),
+                type: post.getAttribute("file_url")?.endsWith(".mp4") ? 'video' : 'image',
+            })),
+            count
+        };
     };
 
     // Функция для поиска постов
@@ -56,8 +60,9 @@ const SearchInput = () => {
             const apiUrl = `https://rule34.xxx/index.php?page=dapi&s=post&q=index&tags=${value.replace(/\s+/g, '+')}&limit=${postsPerPage}&pid=${page - 1}`;
             const response = await fetch(`${proxyUrl}${apiUrl}`);
             const xmlData = await response.text();
-            const parsedResults = parseXML(xmlData);
-            setResults(parsedResults);
+            const { posts, count } = parseXML(xmlData);
+            setResults(posts);
+            setTotalPages(Math.ceil(count / postsPerPage)); // Рассчитываем количество страниц
         } catch (error) {
             console.error("Error fetching data:", error);
         } finally {
@@ -151,7 +156,7 @@ const SearchInput = () => {
             </div>
             <div className='w-full flex justify-center'>
                 {tags.length > 0 && (
-                    <div className=" mt-1 w-[454.883px] bg-black border-2 border-gray-200 rounded-md shadow-lg z-40 max-h-60 overflow-auto">
+                    <div className=" mt-1 w-[454.883px] bg-black border-2 border-gray-200 rounded-md shadow-lg z-10 max-h-60 overflow-auto">
                         <ul>
                             {tags.map((tag, index) => (
                                 <li
@@ -169,7 +174,7 @@ const SearchInput = () => {
             {results.length > 0 && (
                 <div className='w-full flex justify-center mt-4'>
                     <Pagination
-                        total={100} // Тут надо отталкиваться от того сколько всего постов, и делить на кол-во постов на странице
+                        total={totalPages}
                         initialPage={1}
                         page={currentPage}
                         onChange={handlePageChange}
